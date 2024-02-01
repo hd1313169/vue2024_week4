@@ -1,18 +1,13 @@
-// V 1. [js] 串接 vue 
-// V 2. [js] 建立data ->data
-// V 3. [js] 取出token ->mounted
-// V 4. [js] 檢查帳號權限 ->methods ->checkAdmin()
-// V 5. [js] 撈資料的函式 ->methods ->getData()
-// V 6. [html] 綁定表格欄位元素
-// V 7. [js]定義彈出視窗類型 -> productModal、delProductModal
-// V 8. [js]綁定bootstrap彈出視窗 -> mounted -> productModal、delProductModal
-// V 9. [html]綁定按鈕，並調整bootstrap彈出視窗的標籤屬性
-// V 10. [js]打開彈出視窗的函式  -> methods -> openModal() -> 判斷哪個按鈕觸發的對應視窗
-// V 11. [js]更新產品的函式 -> methods -> updateProduct() -> 判斷是新增還是編輯
-// V 12. [html]vue指令綁定表單欄位元素
-// V 13. [js]刪除產品的函式 -> methods -> delProduct()
-// V 14. [js]新增圖片的函式 -> methods -> createImages()
-// V 15. [html]變更新增圖片功能結構
+// 1. [html] 分頁模板化
+// 2. [js] 建立分頁元件
+// 3. [js] 取得分頁資料
+// 4. [html] 新增分頁
+// 5. [html] 新增編輯視窗模板
+// 6. [js] 建立新增/編輯視窗元件
+// 7. [html] 新增新增/編輯視窗
+// 8. [html] 刪除視窗模板化
+// 9. [js] 建立刪除視窗元件
+// 10. [html] 新增刪除視窗
 
 let productModal;
 let delProductModal;
@@ -32,6 +27,8 @@ const app = Vue.createApp({
             tempProduct: {
                 imagesUrl: [],
             },
+
+            pages: {},
         }
     },
     //方法
@@ -50,11 +47,12 @@ const app = Vue.createApp({
         },
 
         //取得資料
-        getData() {
-            const url = `${this.apiUrl}/api/${this.apiPath}/admin/products/all`;
+        getData(page = 1) {
+            const url = `${this.apiUrl}/api/${this.apiPath}/admin/products?page=${page}`;
             axios.get(url)
                 .then(res => {
                     this.products = res.data.products;
+                    this.pages = res.data.pagination;
                 })
                 .catch(err => {
                     alert(err.response.data.message);
@@ -71,16 +69,16 @@ const app = Vue.createApp({
                     imagesUrl: [],
                 };
                 this.isNew = true;
-                productModal.show();
+                this.$refs.productModals.openModal();
 
             } else if (isNew === 'edit') {
                 this.tempProduct = { ...item }; //回傳 edit 為編輯，淺層拷貝資料到 tempProduct
                 this.isNew = false;
-                productModal.show();
+                this.$refs.productModals.openModal();
 
             } else if (isNew === 'delete') {
                 this.tempProduct = { ...item }; //回傳 delete 為刪除，拷貝資料到 tempProduct，開啟刪除視窗
-                delProductModal.show();
+                this.$refs.delModals.openModal();
             }
         },
 
@@ -99,7 +97,7 @@ const app = Vue.createApp({
             axios[http](url, { data: this.tempProduct })
                 .then(res => {
                     alert(res.data.message); //更新提示
-                    productModal.hide(); //隱藏彈出視窗
+                    this.$refs.productModals.closeModal();
                     this.getData(); //重新渲染
                 })
         },
@@ -111,7 +109,7 @@ const app = Vue.createApp({
             axios.delete(url)
                 .then(res => {
                     alert(res.data.message);
-                    delProductModal.hide();
+                    this.$refs.delModals.closeModal();
                     this.getData();
                 })
         },
@@ -130,11 +128,57 @@ const app = Vue.createApp({
         axios.defaults.headers.common.Authorization = token;
 
         this.checkAdmin();
-
-        //bs彈出視窗
-        productModal = new bootstrap.Modal(document.getElementById('productModal'), { keyboard: false });
-        delProductModal = new bootstrap.Modal(document.getElementById('delProductModal'), { keyboard: false });
     }
 })
 
+//分頁元件
+app.component('pagination', {
+    props: ['pages', 'getData'],
+    template: '#pagination',
+});
+
+//增編視窗元件
+app.component('productsModal', {
+    props: ['tempProduct', 'updateProduct', 'isNew', 'createImages'],
+    template: '#productsModal',
+    data() {
+        return {
+            productModal: null,
+        }
+    },
+    methods: {
+        openModal() {
+            this.productModal.show();
+        },
+        closeModal() {
+            this.productModal.hide();
+        },
+    },
+    mounted() {
+        this.productModal = new bootstrap.Modal(document.getElementById('productModal'), { keyboard: false });
+
+    }
+})
+
+//刪除視窗元件
+app.component('delModal', {
+    props: ['tempProduct', 'delProduct'],
+    template: '#delModal',
+    data() {
+        return {
+            delModal: null,
+        }
+    },
+    methods: {
+        openModal() {
+            this.delModal.show();
+        },
+        closeModal() {
+            this.delModal.hide();
+        },
+    },
+    mounted() {
+        this.delModal = new bootstrap.Modal(document.getElementById('delProductModal'), { keyboard: false });
+    },
+})
 app.mount('#app');

@@ -42,7 +42,7 @@ const app = Vue.createApp({
                 })
                 .catch(err => {
                     alert(err.response.data.message);
-                    window.location = 'login-1st.html';
+                    window.location = 'login-2nd.html';
                 })
         },
 
@@ -100,7 +100,7 @@ const app = Vue.createApp({
 // 分頁元件
 app.component('pagination', {
     template: '#pagination',
-    props: ['pages'], //自訂名稱
+    props: ['pages'], 
     methods: {
         //emitPages 觸發時，item 代表的頁數會傳入 getData
         emitPages(item) {
